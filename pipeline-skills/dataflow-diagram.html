@@ -1,0 +1,372 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>(Deprecated)Software-Change Dataflow — Operational Spec</title>
+This document is correct but the visualization herein was not useful, index.html has a better one. 
+<style>
+  :root {
+    --bg: #f5f3ee;
+    --panel: #ffffff;
+    --text: #211f1a;
+    --text-muted: #6b6558;
+    --border: #ddd7c9;
+    --rule: #cdc6b4;
+    --accent-process: #2f6f6a;
+    --accent-artifact: #a8691f;
+    --sheet-bg: #fbf9f2;
+    --sheet-grid: #e7e2d2;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #15171a;
+      --panel: #1b1e21;
+      --text: #e8e5db;
+      --text-muted: #9a9689;
+      --border: #33362f;
+      --rule: #3a3d35;
+      --accent-process: #6fbfb5;
+      --accent-artifact: #dda15e;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #15171a;
+    --panel: #1b1e21;
+    --text: #e8e5db;
+    --text-muted: #9a9689;
+    --border: #33362f;
+    --rule: #3a3d35;
+    --accent-process: #6fbfb5;
+    --accent-artifact: #dda15e;
+  }
+  :root[data-theme="light"] {
+    --bg: #f5f3ee;
+    --panel: #ffffff;
+    --text: #211f1a;
+    --text-muted: #6b6558;
+    --border: #ddd7c9;
+    --rule: #cdc6b4;
+    --accent-process: #2f6f6a;
+    --accent-artifact: #a8691f;
+    --sheet-bg: #fbf9f2;
+    --sheet-grid: #e7e2d2;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: Charter, "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Georgia, serif;
+    line-height: 1.6;
+  }
+
+  .mono {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+  }
+
+  .page {
+    max-width: 920px;
+    margin: 0 auto;
+    padding: 4.5rem 2rem 6rem;
+  }
+
+  header.doc-head {
+    margin-bottom: 3rem;
+    border-bottom: 1px solid var(--rule);
+    padding-bottom: 2rem;
+  }
+
+  .eyebrow {
+    font-size: 0.72rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent-process);
+    margin: 0 0 0.9rem;
+  }
+
+  h1 {
+    font-family: Charter, "Iowan Old Style", Georgia, serif;
+    font-size: 2.15rem;
+    font-weight: 700;
+    margin: 0 0 0.6rem;
+    text-wrap: balance;
+    letter-spacing: -0.01em;
+  }
+
+  .subtitle {
+    color: var(--text-muted);
+    font-size: 1.05rem;
+    max-width: 62ch;
+    margin: 0;
+  }
+
+  .meta-row {
+    display: flex;
+    gap: 1.75rem;
+    margin-top: 1.4rem;
+    flex-wrap: wrap;
+  }
+
+  .meta-item {
+    font-size: 0.78rem;
+  }
+
+  .meta-item .k {
+    display: block;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-size: 0.66rem;
+    margin-bottom: 0.15rem;
+  }
+
+  section { margin-bottom: 3rem; }
+
+  h2 {
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-muted);
+    margin: 0 0 1.1rem;
+    padding-bottom: 0.6rem;
+    border-bottom: 1px solid var(--rule);
+  }
+
+  p { max-width: 68ch; }
+
+  .diagram-panel {
+    background: var(--sheet-bg, #fbf9f2);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 1.75rem 1.25rem 1.25rem;
+    background-image:
+      linear-gradient(var(--sheet-grid, #e7e2d2) 1px, transparent 1px),
+      linear-gradient(90deg, var(--sheet-grid, #e7e2d2) 1px, transparent 1px);
+    background-size: 22px 22px;
+    overflow-x: auto;
+  }
+
+  .diagram-panel .mermaid {
+    min-width: 640px;
+  }
+
+  .diagram-caption {
+    margin-top: 0.9rem;
+    font-size: 0.82rem;
+    color: var(--text-muted);
+    font-style: italic;
+  }
+
+  .legend {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 0.9rem 1.5rem;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .legend li {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.65rem;
+    font-size: 0.88rem;
+  }
+
+  ol.ambiguities {
+    padding-left: 0;
+    list-style: none;
+    counter-reset: amb;
+    margin: 0;
+  }
+  ol.ambiguities li {
+    counter-increment: amb;
+    position: relative;
+    padding: 0.85rem 0 0.85rem 2.6rem;
+    border-bottom: 1px solid var(--rule);
+  }
+  ol.ambiguities li:last-child { border-bottom: none; }
+  ol.ambiguities li::before {
+    content: counter(amb);
+    position: absolute;
+    left: 0;
+    top: 0.8rem;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.78rem;
+    color: var(--accent-artifact);
+    border: 1px solid var(--accent-artifact);
+    width: 1.6rem;
+    height: 1.6rem;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  ol.ambiguities strong { display: block; margin-bottom: 0.15rem; }
+  ol.ambiguities span.q {
+    color: var(--text-muted);
+    font-size: 0.94rem;
+  }
+  ol.ambiguities li.resolved::before {
+    content: "✓";
+    color: var(--accent-process);
+    border-color: var(--accent-process);
+  }
+  ol.ambiguities span.resolution {
+    display: block;
+    margin-top: 0.5rem;
+    font-size: 0.94rem;
+    color: var(--text);
+  }
+  ol.ambiguities .r-label {
+    display: inline;
+    color: var(--accent-process);
+  }
+
+  footer {
+    margin-top: 3.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--rule);
+    font-size: 0.78rem;
+    color: var(--text-muted);
+  }
+</style>
+</head>
+<body>
+
+<div class="page">
+
+  <header class="doc-head">
+    <p class="eyebrow mono">Operational Dataflow Specification</p>
+    <h1>Software-Change Workflow</h1>
+    <p class="subtitle">Reference Intake → (Evidence Extraction ⇄ Evidence Review, reused) → Target Model Proposal → File Surface Discovery → Change Planning → Implementation → Validation → Fault Localization on failure.</p>
+    <div class="meta-row mono">
+      <div class="meta-item"><span class="k">Processes</span>10 distinct</div>
+      <div class="meta-item"><span class="k">Reusable</span>Evidence Extraction ×4, Evidence Review ×5</div>
+      <div class="meta-item"><span class="k">Loop-back</span>Validation → Fault Localization → Confirmed Fault Set → re-invoke + cascade</div>
+      <div class="meta-item"><span class="k">Orchestration</span>User-invoked, manual (Reference Intake may self-invoke Model Dataflow Specification)</div>
+    </div>
+  </header>
+
+  <section>
+    <h2>Diagram</h2>
+    <p>A sequence diagram instead of a flowchart: each column is a lifeline (the user, a process, or the Evidence Set store), and time runs top to bottom, so the invocation order — the thing this specifier actually cares about — is legible without edges converging on shared nodes. Solid arrows are invocations; dashed arrows are returns/outputs. The tinted <strong>rect</strong> block is the Evidence Cycle (Evidence Extraction → Evidence Review), called out once in full, then referenced by a Note at each later reuse point rather than re-expanded — it is the same reusable process every time (Rule 7). <strong>loop</strong> means "repeat until the stated condition holds"; <strong>opt</strong> is a single conditional branch; <strong>alt/else</strong> is a genuine fork. Evidence Review's second contract — reading a Fault Assessment instead of the Evidence Set, per Rule 8 — appears inside the <code class="mono">fail</code> branch at the bottom.</p>
+    <div class="diagram-panel">
+      <pre class="mermaid">
+sequenceDiagram
+    actor User
+    participant RI as Reference Intake
+    participant MDS as Model Dataflow Spec
+    participant EE as Evidence Extraction
+    participant ES as Evidence Set
+    participant ER as Evidence Review
+    participant TMP as Target Model Proposal
+    participant FSD as File Surface Discovery
+    participant CP as Change Planning
+    participant IMPL as Implementation
+    participant VAL as Validation
+    participant FL as Fault Localization
+
+    User->>RI: invoke with Change Request + References
+    opt no Current Model on hand
+        RI->>MDS: invoke against Codebase
+        MDS-->>RI: Current Model
+    end
+    RI-->>User: Reference Set + Current Model
+
+    rect rgba(47,111,106,0.08)
+    Note over RI,ER: Evidence Cycle — reused at every later extraction point
+    RI->>EE: Reference Set
+    EE->>ES: write evidence
+    loop until no pending items or conflicts remain
+        ES->>ER: statusless entries
+        ER->>User: present one pending item
+        User-->>ER: status + justification, per evId
+        ER->>ES: annotate in place
+    end
+    end
+
+    User->>TMP: invoke, reads Evidence Set + Current Model
+    TMP->>User: propose Target Model
+    User-->>TMP: corrections
+    TMP-->>User: approved Target Model
+    TMP->>EE: Target Model
+    Note over EE,ER: Evidence Cycle repeats (as above)
+
+    User->>FSD: invoke, reads Evidence Set
+    FSD-->>User: File Impact
+    FSD->>EE: File Impact
+    Note over EE,ER: Evidence Cycle repeats (as above)
+
+    User->>CP: invoke, reads Evidence Set
+    CP-->>User: Change Plan
+    CP->>EE: Change Plan
+    Note over EE,ER: Evidence Cycle repeats (as above)
+
+    User->>IMPL: invoke, reads Change Plan + Evidence Set
+    IMPL-->>User: Candidate Implementation
+
+    User->>VAL: invoke, reads Candidate Implementation + Evidence Set
+    alt pass
+        VAL-->>User: Workflow Complete
+    else fail
+        VAL->>FL: Bug Report(s)
+        Note over FL: reads upward chain — Candidate Implementation, Change Plan, File Impact, Target Model, Evidence Set
+        FL->>ES: write Fault Assessment, suspects marked non-destructively
+        ES->>ER: Fault Assessment, exceptional input
+        ER->>User: present one suspect item
+        User-->>ER: confirmed / rejected + justification
+        ER-->>FL: Confirmed Fault Set
+        FL->>TMP: re-invoke fix point, wherever confirmed
+        Note over TMP,IMPL: cascade forward — every process between the fix point and Implementation re-runs
+        IMPL-->>VAL: new Candidate Implementation
+    end
+      </pre>
+    </div>
+    <p class="diagram-caption">"Re-invoke fix point" targets whichever process originally produced the confirmed-wrong artifact — Target Model Proposal, File Surface Discovery, Change Planning, or Implementation — not always Target Model Proposal as drawn; the arrow is illustrative of the mechanism, not a fixed destination.</p>
+  </section>
+
+  <section>
+    <h2>Legend</h2>
+    <ul class="legend">
+      <li><span><strong>Lifeline (column)</strong> — the user, an invoked process, or the Evidence Set store; time runs top to bottom.</span></li>
+      <li><span><strong>Solid arrow ( →)</strong> — an invocation, carrying its stated input.</span></li>
+      <li><span><strong>Dashed arrow ( -->)</strong> — a return: an output or produced artifact.</span></li>
+      <li><span><strong>Tinted rect</strong> — the Evidence Cycle (Evidence Extraction → Evidence Review); shown in full once, then referenced by Note at each reuse point, per Rule 7.</span></li>
+      <li><span><strong>loop</strong> — repeat until the stated condition holds (e.g. no pending items remain).</span></li>
+      <li><span><strong>opt</strong> — a single conditional branch (may or may not happen).</span></li>
+      <li><span><strong>alt / else</strong> — a genuine fork, such as Validation's pass/fail.</span></li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Unresolved Dataflow Ambiguities</h2>
+    <ol class="ambiguities">
+      <li class="resolved"><strong>Current Model creation source.</strong><span class="q">When Reference Intake creates a Current Model rather than reviewing a supplied one, what does it read to do so? The codebase is the obvious candidate but is never named as an input.</span><span class="resolution"><strong class="r-label">Resolved —</strong> Reference Intake reads the Change Request. If the user has no Current Model / dataflow reference on hand for the affected area, Reference Intake itself invokes Model Dataflow Specification against the existing codebase to derive one, rather than reading the codebase through some unnamed ad hoc process. The resulting Current Model is then treated as a normal Reference Intake output.</span></li>
+      <li class="resolved"><strong>Reviewed Evidence composition.</strong><span class="q">Is it the full Evidence Set with decisions attached, or only the subset a decision touched? This decides what reaches Target Model Proposal.</span><span class="resolution"><strong class="r-label">Resolved —</strong> There is no separate "Reviewed Evidence" artifact. Evidence Review is an iterative loop against the Evidence Set itself: a reviewing agent scans it and writes needs_review entries (<code class="mono">{evIds, justification}</code>) for anything ambiguous or conflicting, auto-stamped <code class="mono">status: pending</code> by the process, not the agent. The user is then presented each pending entry one at a time (a pure-skill exchange for now, no script) and resolves it <em>per evId</em> — an entry can bundle several evIds, but each gets its own status (<code class="mono">outdated</code> / <code class="mono">invalid</code> / <code class="mono">to_delete</code> / <code class="mono">verified</code>) and a mandatory justification, written back onto that evidence in place. <code class="mono">to_delete</code> evidence is archived and removed from the index; <code class="mono">outdated</code>/<code class="mono">invalid</code> evidence stays in the index, flagged. Evidence the agent never flagged is implicitly <code class="mono">verified</code> by default. The loop (scan → present pending → capture resolutions) repeats until no pending items or conflicts remain. Downstream consumers — starting with Target Model Proposal — read the Evidence Set directly and are individually responsible for programmatically excluding entries by status (e.g. skipping <code class="mono">outdated</code>/<code class="mono">invalid</code>) rather than receiving a pre-filtered artifact.</span></li>
+      <li class="resolved"><strong>Missing approval boundary before File Evidence Extraction / Change Planning.</strong><span class="q">No interactive checkpoint is named for File Impact, yet Implementation later requires an "approved" plan.</span><span class="resolution"><strong class="r-label">Resolved —</strong> The checkpoint is another invocation of the same reusable Evidence Review process (per Rule 7), not a new process. Generalizing: every Evidence Extraction invocation (References, Target Model, File Impact, Change Plan) is followed by an Evidence Review pass before the next process reads the Evidence Set — so File Impact evidence gets reviewed before Change Planning consumes it, the same way initial Reference evidence does before Target Model Proposal. Each Evidence Review invocation scopes itself by filtering the Evidence Set down to <em>statusless</em> entries (no status field yet) rather than maintaining a separate reviewed/unreviewed location — entries already carrying a status from a prior pass (<code class="mono">verified</code>/<code class="mono">outdated</code>/<code class="mono">invalid</code>/<code class="mono">to_delete</code>) are skipped automatically, consistent with the status-filtering scheme downstream consumers already use.</span></li>
+      <li class="resolved"><strong>Change Plan approval, specifically.</strong><span class="q">Step 8 (Change Planning) names no interactive exchange, but Step 10 (Implementation) requires the plan already be approved.</span><span class="resolution"><strong class="r-label">Resolved —</strong> There is no separate granular approval of the Change Plan (or File Impact) document. The one interactive approval gate is upstream, at Target Model Proposal: once the user approves the holistic architectural design, File Surface Discovery → Change Planning → Implementation proceed programmatically without further plan-level sign-off. The real backstop is downstream instead: Validation against the build (manual, initially) is the de facto approval gate. A validation failure is the trigger that initiates a search back up the causal chain — Implementation → Change Plan → File Surface → Target Model, potentially as far as the dataflow model description or the original requirement itself.</span></li>
+      <li class="resolved"><strong>Validation failure routing.</strong><span class="q">"Invoke the appropriate upstream skill" implies a decision with a bounded domain — is that domain always {Target Model Proposal, Change Planning, File Surface Discovery, Implementation}, or can a trace also implicate Reference Intake or Evidence Review?</span><span class="resolution"><strong class="r-label">Resolved —</strong> Not an unbounded routing decision — an explicit new process, <strong>Fault Localization</strong>, triggered by a failing Validation Result. It reads the Bug Report(s) Validation produced plus every artifact in the upward chain (Candidate Implementation, Change Plan, File Impact, Target Model, the Evidence Set), and non-destructively marks suspect artifacts — annotated, nothing deleted — writing a disk-persisted <strong>Fault Assessment</strong>: <code class="mono">{artifact ref, suspect status, justification, [bug report ids implicated]}</code>. The Evidence Review pattern (same pending → one-at-a-time presentation → mandatory-justification resolution loop from ambiguity 2) is reused against the Fault Assessment rather than the Evidence Set, producing a <strong>Confirmed Fault Set</strong> mapping each user-confirmed-wrong artifact to the bug report(s) that implicated it. To close the loop: each confirmed-wrong artifact's current version is marked superseded (archived, not deleted) and the process that originally produced it is re-invoked with the Confirmed Fault Set entry as extra input; that regeneration then cascades forward through the normal dataflow — every process between the fix point and Implementation re-runs in sequence — ending at a new Candidate Implementation that returns to Validation.</span></li>
+      <li class="resolved"><strong>Evidence Set staleness on re-entry.</strong><span class="q">After a loop-back, are previously derived Target Model / File / Plan Evidence regenerated, patched, or left as-is beside the new Validation Result evidence?</span><span class="resolution"><strong class="r-label">Resolved —</strong> Not left ambiguously as-is. Under the Fault Localization / Confirmed Fault Set mechanism above, a loop-back explicitly supersedes (archives, doesn't delete) the confirmed-wrong artifact and everything derived from it, then regenerates them via the forward-cascade re-invocation. Staleness is resolved by the same non-destructive mark-and-regenerate pattern used everywhere else in the workflow, not by a separate rule.</span></li>
+    </ol>
+  </section>
+
+  <footer class="mono">
+    Derived from the reference draft in <code>references/MODEL-DRAFT.md</code> — formalized against the Operational Dataflow Specifier contract.
+  </footer>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js"></script>
+<script>
+  mermaid.initialize({
+    startOnLoad: true,
+    theme: (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'default'
+  });
+</script>
+
+</body>
+</html>

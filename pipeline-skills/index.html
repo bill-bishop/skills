@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Software-Change Dataflow — Sequence</title>
+<style>
+  :root {
+    --bg: #f5f3ee;
+    --panel: #ffffff;
+    --text: #211f1a;
+    --text-muted: #6b6558;
+    --border: #ddd7c9;
+    --sheet-bg: #fbf9f2;
+    --sheet-grid: #e7e2d2;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #15171a;
+      --panel: #1b1e21;
+      --text: #e8e5db;
+      --text-muted: #9a9689;
+      --border: #33362f;
+      --sheet-bg: #1b1e21;
+      --sheet-grid: #262924;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #15171a; --panel: #1b1e21; --text: #e8e5db; --text-muted: #9a9689;
+    --border: #33362f; --sheet-bg: #1b1e21; --sheet-grid: #262924;
+  }
+  :root[data-theme="light"] {
+    --bg: #f5f3ee; --panel: #ffffff; --text: #211f1a; --text-muted: #6b6558;
+    --border: #ddd7c9; --sheet-bg: #fbf9f2; --sheet-grid: #e7e2d2;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: Charter, "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Georgia, serif;
+  }
+  header {
+    padding: 1.5rem clamp(16px, 3vw, 2.5rem) 1rem;
+    border-bottom: 1px solid var(--border);
+  }
+  h1 { font-size: 1.3rem; margin: 0 0 0.3rem; }
+  .subtitle { color: var(--text-muted); font-size: 0.92rem; margin: 0; }
+  .stage {
+    padding: clamp(16px, 3vw, 2.5rem);
+  }
+  .diagram-panel {
+    background: var(--sheet-bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 1.5rem;
+    background-image:
+      linear-gradient(var(--sheet-grid) 1px, transparent 1px),
+      linear-gradient(90deg, var(--sheet-grid) 1px, transparent 1px);
+    background-size: 24px 24px;
+    overflow-x: auto;
+  }
+  .diagram-panel .mermaid {
+    min-width: 1500px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Software-Change Workflow — Sequence</h1>
+  <p class="subtitle">Same model as the operational spec, sized to actually read. Scroll horizontally for the full width; zoom in/out with your browser as usual.</p>
+</header>
+
+<div class="stage">
+  <div class="diagram-panel">
+    <pre class="mermaid">
+sequenceDiagram
+    actor User
+    participant RI as Reference Intake
+    participant MDS as Model Dataflow Spec
+    participant EE as Evidence Extraction
+    participant ES as Evidence Set
+    participant ER as Evidence Review
+    participant TMP as Target Model Proposal
+    participant FSD as File Surface Discovery
+    participant CP as Change Planning
+    participant IMPL as Implementation
+    participant VAL as Validation
+    participant FL as Fault Localization
+
+    User->>RI: invoke with Change Request + References
+    opt no Current Model on hand
+        RI->>MDS: invoke against Codebase
+        MDS-->>RI: Current Model
+    end
+    RI-->>User: Reference Set + Current Model
+
+    rect rgba(47,111,106,0.08)
+    Note over RI,ER: Evidence Cycle — reused at every later extraction point
+    RI->>EE: Reference Set
+    EE->>ES: write evidence
+    loop until no pending items or conflicts remain
+        ES->>ER: statusless entries
+        ER->>User: present one pending item
+        User-->>ER: status + justification, per evId
+        ER->>ES: annotate in place
+    end
+    end
+
+    User->>TMP: invoke, reads Evidence Set + Current Model
+    TMP->>User: propose Target Model
+    User-->>TMP: corrections
+    TMP-->>User: approved Target Model
+    TMP->>EE: Target Model
+    Note over EE,ER: Evidence Cycle repeats (as above)
+
+    User->>FSD: invoke, reads Evidence Set
+    FSD-->>User: File Impact
+    FSD->>EE: File Impact
+    Note over EE,ER: Evidence Cycle repeats (as above)
+
+    User->>CP: invoke, reads Evidence Set
+    CP-->>User: Change Plan
+    CP->>EE: Change Plan
+    Note over EE,ER: Evidence Cycle repeats (as above)
+
+    User->>IMPL: invoke, reads Change Plan + Evidence Set
+    IMPL-->>User: Candidate Implementation
+
+    User->>VAL: invoke, reads Candidate Implementation + Evidence Set
+    alt pass
+        VAL-->>User: Workflow Complete
+    else fail
+        VAL->>FL: Bug Report(s)
+        Note over FL: reads upward chain — Candidate Implementation, Change Plan, File Impact, Target Model, Evidence Set
+        FL->>ES: write Fault Assessment, suspects marked non-destructively
+        ES->>ER: Fault Assessment, exceptional input
+        ER->>User: present one suspect item
+        User-->>ER: confirmed / rejected + justification
+        ER-->>FL: Confirmed Fault Set
+        FL->>TMP: re-invoke fix point, wherever confirmed
+        Note over TMP,IMPL: cascade forward — every process between the fix point and Implementation re-runs
+        IMPL-->>VAL: new Candidate Implementation
+    end
+    </pre>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js"></script>
+<script>
+  mermaid.initialize({
+    startOnLoad: true,
+    theme: (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'default',
+    sequence: {
+      diagramMarginX: 40,
+      diagramMarginY: 20,
+      actorMargin: 90,
+      width: 170,
+      height: 55,
+      boxMargin: 12,
+      boxTextMargin: 6,
+      noteMargin: 12,
+      messageMargin: 42,
+      mirrorActors: true,
+      wrap: true,
+      actorFontSize: 16,
+      messageFontSize: 15,
+      noteFontSize: 14
+    }
+  });
+</script>
+
+</body>
+</html>
