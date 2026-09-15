@@ -1,3 +1,8 @@
+---
+name: model-dataflow
+description: Model how data moves from the user, through each application layer, down to the system of record and back. Use when asked to trace, diagram, or document a data flow, request lifecycle, or system interaction sequence.
+---
+
 # Data Flow Trace
 
 ## Purpose
