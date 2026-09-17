@@ -5,7 +5,7 @@ description: The user "wants something" from an Agent. Help them figure out what
 
 ## Goal
 
-Tell the user up front: this skill produces a document capturing the spirit of what they want, which they can hand off to an agent for detailed planning.
+Tell the user up front: this skill produces a document capturing the spirit of what they want, which they can hand off to an agent for discovery / prototyping / detailed planning.
 
 Align on three things at a bird's-eye level, then document them materially:
 
@@ -25,6 +25,14 @@ These three items relate to one another fundamentally, so expect to refine all o
 
 This step may require research, and may require you to help the user figure out who to ask - if they are enthusiastic about builds and integrations and willing to request access, but they don't know what's possible or how to find out: check what tools are available (slack/jira mcp) and propose discovering for them the feasibility of access-request paths, environment setup etc.
 
+## Prototyping / Hand-off
+
+Work with the user to identify which specific quick-prototyping a la "what is actually possible" would best empower the planning and implementation of their idea.
+
+Once aligned, document this fourth and final alignment materially along with the other items:
+
+4. **Prototyping suggestions**  — Converting "what is actually possible" into material reality — *FAST* — if we correctly identify the friction points and a fast path to legitimatley prove them out, the user will feel like they have UNLOCKED SUPERPOWERS.
+
 ## Process
 
 - Present each of the three items concisely — 3-5 sentences max, ideally.
@@ -32,4 +40,6 @@ This step may require research, and may require you to help the user figure out 
 - With the user's approval, carry out the discovery and documentation of "What is possible" or when necessary, an approval roadmap for getting various accesses that would open doors for what they want.
 - Once the user confirms the three descriptions perfectly capture their intent, and the document is up to date:
   - Tell them where the file lives.
-  - Tell them to hand it to a fresh agent using the `/model-dataflow` skill.
+  - (If `/prototyping` skill is present) Tell them to start a fresh agent and run the `/prototyping` skill.
+  - (If `/prototyping` skill is not present) Tell them to start a fresh agent and point them at this file! (ONLY IF NO SIBLING SKILL PRESENT: write a short hand-off for the agent instructing them to carry out and materially document the suggestions laid out in 4.)
+  
